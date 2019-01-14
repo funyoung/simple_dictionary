@@ -20,6 +20,7 @@ import appulse.simple.dictionary.DefinitionList;
 import appulse.simple.dictionary.R;
 
 import java.util.ArrayList;
+import java.util.List;
 
 
 public class DefinitionAdapter extends BaseAdapter {
@@ -31,7 +32,7 @@ public class DefinitionAdapter extends BaseAdapter {
 		mDefinitions = new ArrayList<>();
 	}
 
-	public void addItems(ArrayList<Definition> newItems) {
+	public void addItems(List<Definition> newItems) {
 		mDefinitions.addAll(newItems);
 		if(mDefinitions.size() == 0){
 			((DefinitionList) mContext).createFailsafe();

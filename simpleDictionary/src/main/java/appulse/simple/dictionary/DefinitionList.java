@@ -4,7 +4,6 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Build;
@@ -30,9 +29,7 @@ import java.util.Locale;
 
 import appulse.dictionary.definition.genius.adapters.DefinitionAdapter;
 import appulse.dictionary.definition.genius.adapters.SynonymAdapter;
-import appulse.dictionary.definition.genius.fetchers.DefinitionFetcher;
-import appulse.dictionary.definition.genius.fetchers.Synonym_Fetcher;
-import appulse.dictionary.definition.genius.fetchers.pronounciation_fetcher;
+import appulse.dictionary.request.DictionaryRequest;
 
 //import com.google.android.gms.ads.AdRequest;
 //import com.google.android.gms.ads.AdView;
@@ -134,6 +131,12 @@ public class DefinitionList extends BaseActivity implements OnInitListener {
         getSupportActionBar().setDisplayHomeAsUpEnabled(isHomeAsUp());
     }
 
+    @Override
+    protected void onStop() {
+	    super.onStop();
+	    DictionaryRequest.getInstance().dumpModel();
+    }
+
     protected boolean isHomeAsUp() {
         return true;
     }
@@ -179,18 +182,6 @@ public class DefinitionList extends BaseActivity implements OnInitListener {
 			item.setVisible(false);
 		}
 		return super.onCreateOptionsMenu(menu);
-	}
-
-	public void getDefinition(String word) {
-		new DefinitionFetcher(this).execute(word);
-	}
-
-	public void getPronounciation(String word) {
-		new pronounciation_fetcher(this).execute(word);
-	}
-
-	public void getSynonyms(String word) {
-		new Synonym_Fetcher(this).execute(word);
 	}
 
 	public void refresh() {
@@ -323,13 +314,11 @@ public class DefinitionList extends BaseActivity implements OnInitListener {
 
 	        the_word = word;
             // Async tasks go here
-            getPronounciation(the_word);
-            getDefinition(the_word);
-            getSynonyms(the_word);
+            DictionaryRequest.getInstance().request(this, the_word);
 
             getSupportActionBar().setTitle(the_word);
             this.word.setText(the_word);
-            speakOut();
+            //speakOut();
         }
     }
 
