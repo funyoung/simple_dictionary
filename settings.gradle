@@ -1,0 +1,4 @@
+include ':actionBarSherlock'
+include ':androidBootstrap'
+include ':simpleDictionary'
+include ':Jazz'
