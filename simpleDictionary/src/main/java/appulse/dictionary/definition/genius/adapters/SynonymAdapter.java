@@ -1,6 +1,7 @@
 package appulse.dictionary.definition.genius.adapters;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import android.content.Context;
 import android.content.Intent;
@@ -15,17 +16,16 @@ import appulse.simple.dictionary.DefinitionList;
 import appulse.simple.dictionary.R;
 
 public class SynonymAdapter extends BaseAdapter {
-	ArrayList<Synonym> mSynonyms;
-	Context mContext;
+	private final List<Synonym> mSynonyms = new ArrayList<>();
+	private final Context mContext;
 
 	public SynonymAdapter(Context context) {
-		this.mContext = context;
-		this.mSynonyms = new ArrayList<Synonym>();
+		mContext = context;
 	}
 
-	public void addItems(ArrayList<Synonym> newItems) {
+	public void addItems(List<Synonym> newItems) {
 		mSynonyms.addAll(newItems);
-		if(mSynonyms.size()>0){
+		if(!mSynonyms.isEmpty()){
 			((DefinitionList) mContext).addSynonyms();
 		}
 		

@@ -1,39 +1,36 @@
 package appulse.simple.dictionary;
 
-import java.util.Locale;
-
-import uk.co.androidalliance.edgeeffectoverride.EdgeEffectListView;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.TextToSpeech.OnInitListener;
+import android.support.v4.app.NavUtils;
+import android.text.TextUtils;
+import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.actionbarsherlock.app.SherlockActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 import com.actionbarsherlock.view.Window;
 import com.beardedhen.androidbootstrap.BootstrapButton;
-//import com.google.android.gms.ads.AdRequest;
-//import com.google.android.gms.ads.AdView;
 import com.twotoasters.jazzylistview.JazzyListView;
 
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.Context;
-import android.content.Intent;
-import android.content.res.Resources;
-import android.graphics.Color;
-import android.graphics.Typeface;
-import android.graphics.drawable.ColorDrawable;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
-import android.speech.tts.TextToSpeech;
-import android.support.v4.app.NavUtils;
-import android.util.Log;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
+import java.util.Locale;
 
 import appulse.dictionary.definition.genius.adapters.DefinitionAdapter;
 import appulse.dictionary.definition.genius.adapters.SynonymAdapter;
@@ -41,8 +38,11 @@ import appulse.dictionary.definition.genius.fetchers.DefinitionFetcher;
 import appulse.dictionary.definition.genius.fetchers.Synonym_Fetcher;
 import appulse.dictionary.definition.genius.fetchers.pronounciation_fetcher;
 
-public class DefinitionList extends SherlockActivity implements
-		TextToSpeech.OnInitListener {
+//import com.google.android.gms.ads.AdRequest;
+//import com.google.android.gms.ads.AdView;
+
+public class DefinitionList extends SherlockActivity implements OnInitListener {
+    private static final String TAG = DefinitionList.class.getSimpleName();
 
 	public DefinitionAdapter mAdapter;
 	public SynonymAdapter sAdapter;
@@ -50,16 +50,13 @@ public class DefinitionList extends SherlockActivity implements
 	private ListView bottomListView;
 	TextView word;
 	TextView pronounce;
-	TextView bottomtitle;
-	String definethis;
+
 	String the_word;
 	String failsafe;
-//	Typeface tf_b;
-//	Typeface tf_r;
+
 	// Menu menu;
 	MenuItem item;
 	private TextToSpeech tts;
-//	AdView adView;
 
 	public void onCreate(Bundle savedInstanceState) { // START OF ON CREATE!
 
@@ -67,15 +64,6 @@ public class DefinitionList extends SherlockActivity implements
 		// make a spinner in the actionbar and create the activity
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		setContentView(R.layout.definition_list_layout);
-		setSupportProgressBarIndeterminateVisibility(true);
-
-		// getting the searched word to a string
-		the_word = getIntent().getStringExtra("WORD");
-
-		// Async tasks go here
-		getPronounciation(the_word);
-		getDefinition(the_word);
-		getSynonyms(the_word);
 
 		// Look up the AdView as a resource and load a request.
 //		adView = (AdView) this.findViewById(R.id.listadView);
@@ -83,10 +71,10 @@ public class DefinitionList extends SherlockActivity implements
 //		adView.loadAd(adRequest);
 
 		// set the header and footer adapters
-		this.mAdapter = new DefinitionAdapter(this);
-		this.sAdapter = new SynonymAdapter(this);
+		mAdapter = new DefinitionAdapter(this);
+		sAdapter = new SynonymAdapter(this);
 		// customize the overscroll color for good measure
-		this.mListView = (JazzyListView) findViewById(R.id.definition_list);
+		mListView = (JazzyListView) findViewById(R.id.definition_list);
 
 		// Do some funky computer language gibberish here
 		tts = new TextToSpeech(this, this);
@@ -118,7 +106,7 @@ public class DefinitionList extends SherlockActivity implements
 
 		word = (TextView) findViewById(R.id.top_word);
 //		word.setTypeface(tf_b);
-		word.setText(getIntent().getStringExtra("WORD"));
+//		word.setText(getIntent().getStringExtra("WORD"));
 		pronounce = (TextView) findViewById(R.id.top_pronounciation);
 //		pronounce.setTypeface(tf_it);
 
@@ -141,9 +129,6 @@ public class DefinitionList extends SherlockActivity implements
 		final TextView appName = (TextView) findViewById(titleId);
 //		appName.setTypeface(mon_reg);
 
-		getSupportActionBar().setTitle(the_word);
-		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
 		getSupportActionBar().setIcon(R.drawable.ic_find);
 		getSupportActionBar().setBackgroundDrawable(
 				new ColorDrawable(Color.parseColor("#43484A")));
@@ -151,17 +136,24 @@ public class DefinitionList extends SherlockActivity implements
 		// END OF ON CREATE!
 	}
 
-	@Override
+    @Override
+    protected void onStart() {
+	    super.onStart();
+        setWord(the_word);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(isHomeAsUp());
+    }
+
+    protected boolean isHomeAsUp() {
+        return true;
+    }
+
+    @Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 
 		switch (item.getItemId()) {
 		case android.R.id.home:
 			NavUtils.navigateUpFromSameTask(this);
-			// Shut down TTS!
-			if (tts != null) {
-				tts.stop();
-				tts.shutdown();
-			}
+			shutDown();
 			// Destroy the AdView.
 //			if (adView != null) {
 //				adView.destroy();
@@ -169,10 +161,16 @@ public class DefinitionList extends SherlockActivity implements
 			return true;
 		case R.id.speak_it:
 			speakOut();
-			return true;
+            return true;
 		case R.id.refresh_it:
 			refresh();
 			return true;
+        case R.id.previewWord:
+            refreshWord(false);
+            return true;
+        case R.id.nextWord:
+            refreshWord(true);
+            return true;
 		default:
 			return super.onOptionsItemSelected(item);
 		}
@@ -205,19 +203,23 @@ public class DefinitionList extends SherlockActivity implements
 	}
 
 	public void refresh() {
-
 		Intent intent = new Intent(DefinitionList.this, DefinitionList.class);
 		intent.putExtra("WORD", the_word);
-		DefinitionList.this.startActivity(intent);
+		startActivity(intent);
 
 		this.finish();
 	}
 
-	public void addSynonyms() {
+	private boolean hasSynonymsFooter = false;
+    public void addSynonyms() {
+        if (hasSynonymsFooter) {
+            return;
+        }
+        hasSynonymsFooter = true;
 		View bottom = getLayoutInflater().inflate(R.layout.bottom, null);
-		this.bottomListView = (ListView) bottom.findViewById(R.id.list);
+		this.bottomListView = bottom.findViewById(R.id.list);
 
-		TextView bottomtitle = (TextView) bottom
+		TextView bottomtitle = bottom
 				.findViewById(R.id.txt_bottom_title);
 //		bottomtitle.setTypeface(tf_b);
 
@@ -229,14 +231,14 @@ public class DefinitionList extends SherlockActivity implements
 	public void createFailsafe() {
 		View failcatcher = getLayoutInflater().inflate(R.layout.fail_catcher,
 				null);
-		this.bottomListView = (ListView) failcatcher.findViewById(R.id.list);
+		this.bottomListView = failcatcher.findViewById(R.id.list);
 
 		failsafe = "on";
 
-		TextView shucks = (TextView) failcatcher.findViewById(R.id.shucks);
+		TextView shucks = failcatcher.findViewById(R.id.shucks);
 //		shucks.setTypeface(tf_r);
 
-		BootstrapButton wikipedia = (BootstrapButton) failcatcher
+		BootstrapButton wikipedia = failcatcher
 				.findViewById(R.id.wikipedia_it);
 		wikipedia.setOnClickListener(new View.OnClickListener() {
 			@Override
@@ -247,7 +249,7 @@ public class DefinitionList extends SherlockActivity implements
 
 		});
 
-		BootstrapButton google = (BootstrapButton) failcatcher
+		BootstrapButton google = failcatcher
 				.findViewById(R.id.google_it);
 		google.setOnClickListener(new View.OnClickListener() {
 			@Override
@@ -281,10 +283,7 @@ public class DefinitionList extends SherlockActivity implements
 	@Override
 	public void onDestroy() {
 		// Don't forget to shutdown tts!
-		if (tts != null) {
-			tts.stop();
-			tts.shutdown();
-		}
+		shutDown();
 		// Destroy the AdView.
 //		if (adView != null) {
 //			adView.destroy();
@@ -297,7 +296,7 @@ public class DefinitionList extends SherlockActivity implements
 		if (status == TextToSpeech.SUCCESS) {
 
 			// Accent!
-			int result = tts.setLanguage(Locale.UK);
+			int result = tts.setLanguage(Locale.US);
 
 			if (result == TextToSpeech.LANG_MISSING_DATA
 					|| result == TextToSpeech.LANG_NOT_SUPPORTED) {
@@ -317,4 +316,32 @@ public class DefinitionList extends SherlockActivity implements
 		tts.speak(the_word, TextToSpeech.QUEUE_FLUSH, null);
 	}
 
+	private void shutDown() {
+		// Shut down TTS!
+		if (tts != null) {
+			tts.stop();
+			tts.shutdown();
+		}
+	}
+
+    protected void setWord(String word) {
+	    if (null != word && !TextUtils.equals(word, the_word)) {
+            setSupportProgressBarIndeterminateVisibility(true);
+            mAdapter.clear();
+            sAdapter.clear();
+
+	        the_word = word;
+            // Async tasks go here
+            getPronounciation(the_word);
+            getDefinition(the_word);
+            getSynonyms(the_word);
+
+            getSupportActionBar().setTitle(the_word);
+            this.word.setText(the_word);
+            speakOut();
+        }
+    }
+
+    protected void refreshWord(boolean next) {
+    }
 }
