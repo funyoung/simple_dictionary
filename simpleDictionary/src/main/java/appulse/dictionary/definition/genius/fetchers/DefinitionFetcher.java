@@ -1,59 +1,45 @@
 package appulse.dictionary.definition.genius.fetchers;
 
-import android.os.AsyncTask;
-
-//import appulse.dictionary.definition.genius.DictionaryAPI;
-import appulse.dictionary.definition.genius.objects.Definition;
-import appulse.simple.dictionary.DefinitionList;
+import android.support.annotation.MainThread;
+import android.support.annotation.WorkerThread;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 
+import appulse.dictionary.definition.genius.objects.Definition;
+import appulse.dictionary.model.DictionaryModel;
 
-public class DefinitionFetcher extends AsyncTask<String, Void, ArrayList<Definition>> {
-	private DefinitionList mContext;
-	private final String base_url = "http://api.wordnik.com:80/v4/word.json/";
-	private final String definitions_url = "/definitions?limit=12&includeRelated=true&sourceDictionaries=wiktionary,webster,century,wordnet,ahd&useCanonical=true&includeTags=false";
-
-	public DefinitionFetcher(DefinitionList context) {
-		this.mContext = context;
+public class DefinitionFetcher extends AbstractBaseFetcher<ArrayList<Definition>> {
+	@MainThread
+	public DefinitionFetcher(DictionaryModel context) {
+		super(context, FetcherConstant.definitions_url, FetcherConstant.apkKey);
 	}
 
-	public ArrayList<Definition> doInBackground(String... strings) {
-		ArrayList<Definition> definitions = new ArrayList<Definition>();
-	
+	@WorkerThread
+	@Override
+	protected ArrayList<Definition> onFetcherResult(String word, String line) {
+		ArrayList<Definition> definitions = new ArrayList<>();
 
 		try {
-			URL url = new URL(base_url + strings[0] + definitions_url + "&api_key=" + "de46aea2a06a6bd33572d005afc01f025e0a2875bc6a089e8");
-			URLConnection connection = url.openConnection();
-
-			JSONArray response = new JSONArray(new BufferedReader(new InputStreamReader(connection.getInputStream())).readLine());
-
+			JSONArray response = new JSONArray(line);
 			for (int i = 0; i < response.length(); i++) {
 				JSONObject definition = response.getJSONObject(i);
-
-				definitions.add(new Definition(definition.getString("word"), definition.getString("partOfSpeech"), definition.getString("text")));
+				definitions.add(new Definition(definition.getString("word"),
+						definition.getString("partOfSpeech"),
+						definition.getString("text")));
 			}
-		} catch (IOException e) {
-
 		} catch (JSONException e) {
-
 		}
 
 		return definitions;
 	}
 
+	@MainThread
 	@Override
-	protected void onPostExecute(ArrayList<Definition> result) {
-		mContext.mAdapter.addItems(result);
-		mContext.setSupportProgressBarIndeterminateVisibility(false);
+	protected void onPostResult(DictionaryModel model, String queryingWord, ArrayList<Definition> definitions) {
+		model.onDefinitionReady(queryingWord, definitions);
 	}
 }
