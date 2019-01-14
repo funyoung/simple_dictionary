@@ -23,12 +23,12 @@ import java.util.ArrayList;
 
 
 public class DefinitionAdapter extends BaseAdapter {
-	ArrayList<Definition> mDefinitions;
-	Context mContext;
+	private final ArrayList<Definition> mDefinitions;
+	private final Context mContext;
 
 	public DefinitionAdapter(Context context) {
-		this.mContext = context;
-		this.mDefinitions = new ArrayList<Definition>();
+		mContext = context;
+		mDefinitions = new ArrayList<>();
 	}
 
 	public void addItems(ArrayList<Definition> newItems) {

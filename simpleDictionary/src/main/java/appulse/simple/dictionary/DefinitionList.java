@@ -4,12 +4,15 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.TextToSpeech.OnInitListener;
 import android.support.v4.app.NavUtils;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -34,8 +37,8 @@ import appulse.dictionary.definition.genius.fetchers.pronounciation_fetcher;
 //import com.google.android.gms.ads.AdRequest;
 //import com.google.android.gms.ads.AdView;
 
-public class DefinitionList extends BaseActivity implements
-		TextToSpeech.OnInitListener {
+public class DefinitionList extends BaseActivity implements OnInitListener {
+    private static final String TAG = DefinitionList.class.getSimpleName();
 
 	public DefinitionAdapter mAdapter;
 	public SynonymAdapter sAdapter;
@@ -43,31 +46,18 @@ public class DefinitionList extends BaseActivity implements
 	private ListView bottomListView;
 	TextView word;
 	TextView pronounce;
-	TextView bottomtitle;
-	String definethis;
+
 	String the_word;
 	String failsafe;
-//	Typeface tf_b;
-//	Typeface tf_r;
+
 	// Menu menu;
 	MenuItem item;
 	private TextToSpeech tts;
-//	AdView adView;
 
 	public void onCreate(Bundle savedInstanceState) { // START OF ON CREATE!
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.definition_list_layout);
-
-		setSupportProgressBarIndeterminateVisibility(true);
-
-		// getting the searched word to a string
-		the_word = getIntent().getStringExtra("WORD");
-
-		// Async tasks go here
-		getPronounciation(the_word);
-		getDefinition(the_word);
-		getSynonyms(the_word);
 
 		// Look up the AdView as a resource and load a request.
 //		adView = (AdView) this.findViewById(R.id.listadView);
@@ -75,10 +65,10 @@ public class DefinitionList extends BaseActivity implements
 //		adView.loadAd(adRequest);
 
 		// set the header and footer adapters
-		this.mAdapter = new DefinitionAdapter(this);
-		this.sAdapter = new SynonymAdapter(this);
+		mAdapter = new DefinitionAdapter(this);
+		sAdapter = new SynonymAdapter(this);
 		// customize the overscroll color for good measure
-		this.mListView = (JazzyListView) findViewById(R.id.definition_list);
+		mListView = (JazzyListView) findViewById(R.id.definition_list);
 
 		// Do some funky computer language gibberish here
 		tts = new TextToSpeech(this, this);
@@ -110,7 +100,7 @@ public class DefinitionList extends BaseActivity implements
 
 		word = (TextView) findViewById(R.id.top_word);
 //		word.setTypeface(tf_b);
-		word.setText(getIntent().getStringExtra("WORD"));
+//		word.setText(getIntent().getStringExtra("WORD"));
 		pronounce = (TextView) findViewById(R.id.top_pronounciation);
 //		pronounce.setTypeface(tf_it);
 
@@ -133,9 +123,20 @@ public class DefinitionList extends BaseActivity implements
 		final TextView appName = (TextView) findViewById(titleId);
 //		appName.setTypeface(mon_reg);
 
-        setActionBarIcon(R.drawable.ic_find, the_word, true);
+        setActionBarIcon(R.drawable.ic_find);
 		// END OF ON CREATE!
 	}
+
+    @Override
+    protected void onStart() {
+	    super.onStart();
+        setWord(the_word);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(isHomeAsUp());
+    }
+
+    protected boolean isHomeAsUp() {
+        return true;
+    }
 
     @Override
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -143,11 +144,7 @@ public class DefinitionList extends BaseActivity implements
 		switch (item.getItemId()) {
 		case android.R.id.home:
 			NavUtils.navigateUpFromSameTask(this);
-			// Shut down TTS!
-			if (tts != null) {
-				tts.stop();
-				tts.shutdown();
-			}
+			shutDown();
 			// Destroy the AdView.
 //			if (adView != null) {
 //				adView.destroy();
@@ -155,10 +152,16 @@ public class DefinitionList extends BaseActivity implements
 			return true;
 		case R.id.speak_it:
 			speakOut();
-			return true;
+            return true;
 		case R.id.refresh_it:
 			refresh();
 			return true;
+        case R.id.previewWord:
+            refreshWord(false);
+            return true;
+        case R.id.nextWord:
+            refreshWord(true);
+            return true;
 		default:
 			return super.onOptionsItemSelected(item);
 		}
@@ -191,19 +194,23 @@ public class DefinitionList extends BaseActivity implements
 	}
 
 	public void refresh() {
-
 		Intent intent = new Intent(DefinitionList.this, DefinitionList.class);
 		intent.putExtra("WORD", the_word);
-		DefinitionList.this.startActivity(intent);
+		startActivity(intent);
 
 		this.finish();
 	}
 
-	public void addSynonyms() {
+	private boolean hasSynonymsFooter = false;
+    public void addSynonyms() {
+        if (hasSynonymsFooter) {
+            return;
+        }
+        hasSynonymsFooter = true;
 		View bottom = getLayoutInflater().inflate(R.layout.bottom, null);
-		this.bottomListView = (ListView) bottom.findViewById(R.id.list);
+		this.bottomListView = bottom.findViewById(R.id.list);
 
-		TextView bottomtitle = (TextView) bottom
+		TextView bottomtitle = bottom
 				.findViewById(R.id.txt_bottom_title);
 //		bottomtitle.setTypeface(tf_b);
 
@@ -267,10 +274,7 @@ public class DefinitionList extends BaseActivity implements
 	@Override
 	public void onDestroy() {
 		// Don't forget to shutdown tts!
-		if (tts != null) {
-			tts.stop();
-			tts.shutdown();
-		}
+		shutDown();
 		// Destroy the AdView.
 //		if (adView != null) {
 //			adView.destroy();
@@ -283,7 +287,7 @@ public class DefinitionList extends BaseActivity implements
 		if (status == TextToSpeech.SUCCESS) {
 
 			// Accent!
-			int result = tts.setLanguage(Locale.UK);
+			int result = tts.setLanguage(Locale.US);
 
 			if (result == TextToSpeech.LANG_MISSING_DATA
 					|| result == TextToSpeech.LANG_NOT_SUPPORTED) {
@@ -303,4 +307,32 @@ public class DefinitionList extends BaseActivity implements
 		tts.speak(the_word, TextToSpeech.QUEUE_FLUSH, null);
 	}
 
+	private void shutDown() {
+		// Shut down TTS!
+		if (tts != null) {
+			tts.stop();
+			tts.shutdown();
+		}
+	}
+
+    protected void setWord(String word) {
+	    if (null != word && !TextUtils.equals(word, the_word)) {
+            setSupportProgressBarIndeterminateVisibility(true);
+            mAdapter.clear();
+            sAdapter.clear();
+
+	        the_word = word;
+            // Async tasks go here
+            getPronounciation(the_word);
+            getDefinition(the_word);
+            getSynonyms(the_word);
+
+            getSupportActionBar().setTitle(the_word);
+            this.word.setText(the_word);
+            speakOut();
+        }
+    }
+
+    protected void refreshWord(boolean next) {
+    }
 }
