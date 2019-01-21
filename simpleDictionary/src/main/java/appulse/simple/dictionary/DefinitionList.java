@@ -1,26 +1,10 @@
 package appulse.simple.dictionary;
 
-import java.util.Locale;
-
-import uk.co.androidalliance.edgeeffectoverride.EdgeEffectListView;
-
-import com.actionbarsherlock.app.SherlockActivity;
-import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuItem;
-import com.actionbarsherlock.view.Window;
-import com.beardedhen.androidbootstrap.BootstrapButton;
-//import com.google.android.gms.ads.AdRequest;
-//import com.google.android.gms.ads.AdView;
-import com.twotoasters.jazzylistview.JazzyListView;
-
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.graphics.Color;
-import android.graphics.Typeface;
-import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -30,10 +14,16 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuItem;
+import com.beardedhen.androidbootstrap.BootstrapButton;
+import com.twotoasters.jazzylistview.JazzyListView;
+
+import java.util.Locale;
 
 import appulse.dictionary.definition.genius.adapters.DefinitionAdapter;
 import appulse.dictionary.definition.genius.adapters.SynonymAdapter;
@@ -41,7 +31,10 @@ import appulse.dictionary.definition.genius.fetchers.DefinitionFetcher;
 import appulse.dictionary.definition.genius.fetchers.Synonym_Fetcher;
 import appulse.dictionary.definition.genius.fetchers.pronounciation_fetcher;
 
-public class DefinitionList extends SherlockActivity implements
+//import com.google.android.gms.ads.AdRequest;
+//import com.google.android.gms.ads.AdView;
+
+public class DefinitionList extends BaseActivity implements
 		TextToSpeech.OnInitListener {
 
 	public DefinitionAdapter mAdapter;
@@ -62,11 +55,10 @@ public class DefinitionList extends SherlockActivity implements
 //	AdView adView;
 
 	public void onCreate(Bundle savedInstanceState) { // START OF ON CREATE!
-
 		super.onCreate(savedInstanceState);
-		// make a spinner in the actionbar and create the activity
-		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+
 		setContentView(R.layout.definition_list_layout);
+
 		setSupportProgressBarIndeterminateVisibility(true);
 
 		// getting the searched word to a string
@@ -141,17 +133,11 @@ public class DefinitionList extends SherlockActivity implements
 		final TextView appName = (TextView) findViewById(titleId);
 //		appName.setTypeface(mon_reg);
 
-		getSupportActionBar().setTitle(the_word);
-		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
-		getSupportActionBar().setIcon(R.drawable.ic_find);
-		getSupportActionBar().setBackgroundDrawable(
-				new ColorDrawable(Color.parseColor("#43484A")));
-
+        setActionBarIcon(R.drawable.ic_find, the_word, true);
 		// END OF ON CREATE!
 	}
 
-	@Override
+    @Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 
 		switch (item.getItemId()) {
@@ -229,14 +215,14 @@ public class DefinitionList extends SherlockActivity implements
 	public void createFailsafe() {
 		View failcatcher = getLayoutInflater().inflate(R.layout.fail_catcher,
 				null);
-		this.bottomListView = (ListView) failcatcher.findViewById(R.id.list);
+		this.bottomListView = failcatcher.findViewById(R.id.list);
 
 		failsafe = "on";
 
-		TextView shucks = (TextView) failcatcher.findViewById(R.id.shucks);
+		TextView shucks = failcatcher.findViewById(R.id.shucks);
 //		shucks.setTypeface(tf_r);
 
-		BootstrapButton wikipedia = (BootstrapButton) failcatcher
+		BootstrapButton wikipedia = failcatcher
 				.findViewById(R.id.wikipedia_it);
 		wikipedia.setOnClickListener(new View.OnClickListener() {
 			@Override
@@ -247,7 +233,7 @@ public class DefinitionList extends SherlockActivity implements
 
 		});
 
-		BootstrapButton google = (BootstrapButton) failcatcher
+		BootstrapButton google = failcatcher
 				.findViewById(R.id.google_it);
 		google.setOnClickListener(new View.OnClickListener() {
 			@Override

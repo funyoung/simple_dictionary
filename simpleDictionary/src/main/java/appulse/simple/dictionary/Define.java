@@ -2,9 +2,6 @@ package appulse.simple.dictionary;
 
 import android.content.Intent;
 import android.content.res.Resources;
-import android.graphics.Color;
-import android.graphics.Typeface;
-import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -13,18 +10,11 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import appulse.simple.dictionary.R;
-import appulse.dictionary.definition.genius.objects.Definition;
-
-import me.grantland.widget.AutofitTextView;
+import com.actionbarsherlock.view.MenuItem;
+import com.beardedhen.androidbootstrap.BootstrapButton;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import com.actionbarsherlock.app.SherlockActivity;
-import com.actionbarsherlock.view.MenuItem;
-import com.actionbarsherlock.view.Window;
-import com.beardedhen.androidbootstrap.BootstrapButton;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -32,7 +22,10 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 
-public class Define extends SherlockActivity {
+import appulse.dictionary.definition.genius.objects.Definition;
+import me.grantland.widget.AutofitTextView;
+
+public class Define extends BaseActivity {
 
 	EditText define;
 	BootstrapButton search_btn;
@@ -45,13 +38,9 @@ public class Define extends SherlockActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		// make a spinner in the actionbar and create the activity
-		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		setContentView(R.layout.define_layout);
 
-		getSupportActionBar().setIcon(R.drawable.ic_search);
-		getSupportActionBar().setBackgroundDrawable(
-				new ColorDrawable(Color.parseColor("#43484A")));
+        setActionBarIcon(R.drawable.ic_search);
 
 //		Typeface tf_b = Typeface.createFromAsset(getAssets(),
 //				"fonts/Georgia Bold.ttf");
@@ -105,7 +94,7 @@ public class Define extends SherlockActivity {
 				&& intent.getType() != null)
 			handleIntent(intent);
 
-		((BootstrapButton) findViewById(R.id.search_button))
+		findViewById(R.id.search_button)
 				.setOnClickListener(new View.OnClickListener() {
 					@Override
 					public void onClick(View view) {
